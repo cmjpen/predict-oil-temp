@@ -1,6 +1,7 @@
 #
 /hyperparam_tuning
 /src/hyperparam_tuning
+/test
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
