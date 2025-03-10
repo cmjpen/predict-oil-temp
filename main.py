@@ -4,7 +4,7 @@ import threading
 from src import train_model  
 import tkinter.font as tkFont
 
-# Initial language dictionary (English and Japanese)
+# 初期言語辞書（英語と日本語）
 lang_dict = {
     "select_mode": "Select Mode / モード選択",
     "train": "Train / 訓練",
@@ -32,15 +32,15 @@ lang_dict = {
     "select_csv": "Select CSV File / CSVファイルを選択"
 }
 
-# Mode map for conversion between languages
+# モードマップ（言語間の変換用）
 mode_map = {
     "Train": "Train / 訓練",
     "Evaluate": "Evaluate / 評価",
     "Tune": "Tune / 調整"
 }
 
-# Store internal mode (language-independent)
-current_internal_mode = "train"  # Default to train mode
+# 内部モードを保存（言語に依存しない）
+current_internal_mode = "train"  # デフォルトは訓練モード
 
 def select_file():
     file_path = filedialog.askopenfilename(title=lang_dict["select_csv"], filetypes=[("CSV Files", "*.csv")])
@@ -50,10 +50,10 @@ def select_file():
 def update_mode(*args):
     global current_internal_mode
     
-    # Get selected mode text
+    # 選択されたモードのテキストを取得
     selected_mode = mode_var.get()
     
-    # Map to internal mode ("train", "evaluate", "tune")
+    # 内部モードにマップ（"train", "evaluate", "tune"）
     if selected_mode == lang_dict["train"]:
         current_internal_mode = "train"
     elif selected_mode == lang_dict["evaluate"]:
@@ -61,22 +61,22 @@ def update_mode(*args):
     elif selected_mode == lang_dict["tune"]:
         current_internal_mode = "tune"
     
-    # Update UI based on internal mode
+    # 内部モードに基づいてUIを更新
     if current_internal_mode == "evaluate":
-        extra_frame.grid_remove()  # Hide extra parameters
+        extra_frame.grid_remove()  # 追加パラメータを非表示
     else:
-        extra_frame.grid()         # Show extra parameters
+        extra_frame.grid()         # 追加パラメータを表示
     
-    # Force geometry recalculation
+    # ジオメトリの再計算を強制
     root.update_idletasks()
-    root.geometry("")  # Reset to natural size
+    root.geometry("")  # 自然なサイズにリセット
 
 def run_action():
     file_path = file_entry.get()
     model_save_path = model_save_entry.get()
     
     try:
-        # Extra parameters (only used for Train/Tune modes)
+        # 追加パラメータ（訓練/調整モードでのみ使用）
         n_lags = int(n_lags_entry.get())
         target_col = target_col_entry.get()
         epochs = int(epochs_entry.get())
@@ -88,7 +88,7 @@ def run_action():
         messagebox.showerror(lang_dict["input_error"], lang_dict["check_numeric"])
         return
 
-    # Update status label to show progress (using thread-safe call)
+    # ステータスラベルを進行状況に更新（スレッドセーフな呼び出しを使用）
     root.after(0, lambda: status_label.config(text=lang_dict["status_running"]))
 
     def run_in_thread():
@@ -104,16 +104,16 @@ def run_action():
                 train_model.tune_lstm(file_path, n_lags, target_col,
                                       epochs, batch_size, validation_split,
                                       model_save_path, max_trials=max_trials)
-            # On success, update status label via thread-safe call
+            # 成功時にステータスラベルを更新（スレッドセーフな呼び出しを使用）
             root.after(0, lambda: status_label.config(text=lang_dict["status_completed"]))
         except Exception as e:
-            # On error, update status label with error message
+            # エラー時にステータスラベルをエラーメッセージで更新
             root.after(0, lambda e=e: status_label.config(text=f"{lang_dict['status_error']}: {str(e)}"))
         finally:
-            # Optionally, clear the status after a few seconds
+            # 必要に応じて、数秒後にステータスをクリア
             root.after(5000, lambda: status_label.config(text=lang_dict["status_idle"]))
 
-    # Start the operation in a separate thread so the GUI stays responsive
+    # 操作を別スレッドで開始してGUIを応答可能に保つ
     threading.Thread(target=run_in_thread).start()
 
 def update_labels():
@@ -133,16 +133,16 @@ def update_labels():
     run_button.config(text=lang_dict["run"])
     status_label.config(text=lang_dict["status_idle"])
 
-# Set up the main window
+# メインウィンドウの設定
 root = tk.Tk()
 root.title("Oil Temperature Prediction")
 
-# Configure column weights to ensure proper expansion
+# 列の重みを設定して適切に拡張
 root.columnconfigure(0, weight=1)
 
-# Mode selection
-mode_var = tk.StringVar(value="Train")  # Default value in English
-mode_var.trace_add("write", update_mode)  # Call update_mode whenever mode changes
+# モード選択
+mode_var = tk.StringVar(value="Train")  # デフォルト値は英語
+mode_var.trace_add("write", update_mode)  # モードが変更されるたびにupdate_modeを呼び出す
 
 frame_mode = ttk.LabelFrame(root, text="Select Mode / モード選択")
 frame_mode.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
@@ -150,17 +150,17 @@ frame_mode.columnconfigure(0, weight=1)
 frame_mode.columnconfigure(1, weight=1)
 frame_mode.columnconfigure(2, weight=1)
 
-# Create mode buttons
+# モードボタンを作成
 mode_buttons = []
-for i, mode in enumerate(["Train / 訓練", "Evaluate / 評価", "Tune / 調整"]):  # Default English values
+for i, mode in enumerate(["Train / 訓練", "Evaluate / 評価", "Tune / 調整"]):  # デフォルトは英語
     btn = ttk.Radiobutton(frame_mode, text=mode, variable=mode_var, value=mode)
     btn.grid(row=0, column=i, padx=5, pady=5, sticky="ew")
     mode_buttons.append(btn)
 
-# Common parameters frame (always visible)
+# 共通パラメータフレーム（常に表示）
 common_frame = ttk.LabelFrame(root, text="Common Parameters / 共通パラメータ")
 common_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
-common_frame.columnconfigure(1, weight=1)  # Make entry columns expandable
+common_frame.columnconfigure(1, weight=1)  # エントリ列を拡張可能にする
 
 def add_label_entry(parent, label_text, row, default=""):
     label = ttk.Label(parent, text=label_text)
@@ -175,10 +175,10 @@ browse_button = ttk.Button(common_frame, text="Browse / ブラウズ", command=s
 browse_button.grid(row=0, column=2, padx=5, pady=5)
 model_save_label, model_save_entry = add_label_entry(common_frame, "Model Save Path: / モデル保存パス:", 1, "models/ot_model_7d_ft_50.keras")
 
-# Extra parameters frame (visible for Train/Tune modes only)
+# 追加パラメータフレーム（訓練/調整モードでのみ表示）
 extra_frame = ttk.LabelFrame(root, text="Extra Parameters / 追加パラメータ")
 extra_frame.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
-extra_frame.columnconfigure(1, weight=1)  # Make entry columns expandable
+extra_frame.columnconfigure(1, weight=1)  # エントリ列を拡張可能にする
 
 n_lags_label, n_lags_entry = add_label_entry(extra_frame, "n_lags: / 遅れ数:", 0, "5")
 target_col_label, target_col_entry = add_label_entry(extra_frame, "Target Column: / 目標列:", 1, "OT")
@@ -188,21 +188,21 @@ validation_split_label, validation_split_entry = add_label_entry(extra_frame, "V
 interval_label, interval_entry = add_label_entry(extra_frame, "Interval (hours): / 間隔（時間）:", 5, "24")
 max_trials_label, max_trials_entry = add_label_entry(extra_frame, "Max Trials (Tune): / 最大試行数（調整）:", 6, "50")
 
-# Run button
+# 実行ボタン
 run_button = ttk.Button(root, text="Run / 実行", command=run_action)
 run_button.grid(row=4, column=0, padx=10, pady=10)
 
-# Status label near the run button
+# 実行ボタンの近くにステータスラベル
 status_label = ttk.Label(root, text="Status: Idle / 状態: 待機中")
 status_label.grid(row=5, column=0, padx=10, pady=5)
 
-# Initialize default mode
+# デフォルトモードを初期化
 update_mode()
 
-# Set initial language (English by default)
+# 初期言語を設定（デフォルトは英語）
 update_labels()
 
-# Allow the window to resize itself to fit contents
+# コンテンツに合わせてウィンドウサイズを調整可能にする
 root.update_idletasks()
 root.geometry("")
 
