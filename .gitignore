@@ -1,3 +1,7 @@
+#
+/hyperparam_tuning
+/src/hyperparam_tuning
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
