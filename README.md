@@ -60,6 +60,8 @@
 
 ## **インストール方法**
 
+Python 3.10.0を使います。
+
 1. **リポジトリをクローン（Gitを使用する場合）**  
     ```bash
     git clone [repository-url]
