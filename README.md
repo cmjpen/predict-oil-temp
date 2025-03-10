@@ -66,8 +66,8 @@ Python 3.10.0を使います。
 
 1. **リポジトリをクローン（Gitを使用する場合）**  
     ```bash
-    git clone [repository-url]
-    cd [project-directory]
+    git clone https://github.com/cmjpen/predict-oil-temp/tree/main?tab=readme-ov-file
+    cd predict-oil-temp
     ```  
 
 2. **仮想環境を作成（推奨）**  
