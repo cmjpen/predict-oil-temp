@@ -4,21 +4,43 @@ import threading
 from src import train_model  
 import tkinter.font as tkFont
 
-# Define a custom font (adjust the family name if your system has it installed)
-# custom_font = tkFont.Font(family="Helvetica", size=10)  # Or use "Noto Sans CJK JP" if installed
-
+# Initial language dictionary (English only)
 lang_dict = {
-    "select_csv": "Select CSV File",
-    "evaluate": "Evaluate",
+    "select_mode": "Select Mode",
     "train": "Train",
+    "evaluate": "Evaluate",
     "tune": "Tune",
-    "input_error": "Input Error",
-    "check_numeric": "Please check that all inputs are numeric.",
+    "common_params": "Common Parameters",
+    "csv_file_path": "CSV File Path:",
+    "browse": "Browse",
+    "model_save_path": "Model Save Path:",
+    "extra_params": "Extra Parameters",
+    "n_lags": "n_lags:",
+    "target_col": "Target Column:",
+    "epochs": "Epochs:",
+    "batch_size": "Batch Size:",
+    "validation_split": "Validation Split:",
+    "interval": "Interval (hours):",
+    "max_trials": "Max Trials (Tune):",
+    "run": "Run",
+    "status_idle": "Status: Idle",
     "status_running": "Status: Running...",
     "status_completed": "Status: Completed",
     "status_error": "Status: Error",
-    "status_idle": "Status: Idle"
+    "input_error": "Input Error",
+    "check_numeric": "Please check that numeric values are entered correctly.",
+    "select_csv": "Select CSV File"
 }
+
+# Mode map for conversion between languages
+mode_map = {
+    "Train": "Train",
+    "Evaluate": "Evaluate",
+    "Tune": "Tune"
+}
+
+# Store internal mode (language-independent)
+current_internal_mode = "train"  # Default to train mode
 
 def select_file():
     file_path = filedialog.askopenfilename(title=lang_dict["select_csv"], filetypes=[("CSV Files", "*.csv")])
@@ -26,14 +48,30 @@ def select_file():
     file_entry.insert(0, file_path)
 
 def update_mode(*args):
-    mode = mode_var.get()
-    if mode == lang_dict["evaluate"]:
+    global current_internal_mode
+    
+    # Get selected mode text
+    selected_mode = mode_var.get()
+    
+    # Map to internal mode ("train", "evaluate", "tune")
+    if selected_mode == lang_dict["train"]:
+        current_internal_mode = "train"
+    elif selected_mode == lang_dict["evaluate"]:
+        current_internal_mode = "evaluate"
+    elif selected_mode == lang_dict["tune"]:
+        current_internal_mode = "tune"
+    
+    # Update UI based on internal mode
+    if current_internal_mode == "evaluate":
         extra_frame.grid_remove()  # Hide extra parameters
     else:
         extra_frame.grid()         # Show extra parameters
+    
+    # Force geometry recalculation
+    root.update_idletasks()
+    root.geometry("")  # Reset to natural size
 
 def run_action():
-    mode = mode_var.get()
     file_path = file_entry.get()
     model_save_path = model_save_entry.get()
     
@@ -55,14 +93,14 @@ def run_action():
 
     def run_in_thread():
         try:
-            if mode == lang_dict["train"]:
+            if current_internal_mode == "train":
                 train_model.train_lstm(file_path, n_lags, target_col,
                                        epochs, batch_size, validation_split,
                                        model_save_path)
-            elif mode == lang_dict["evaluate"]:
+            elif current_internal_mode == "evaluate":
                 train_model.evaluate_lstm(file_path, n_lags, target_col,
                                           model_save_path, interval)
-            elif mode == lang_dict["tune"]:
+            elif current_internal_mode == "tune":
                 train_model.tune_lstm(file_path, n_lags, target_col,
                                       epochs, batch_size, validation_split,
                                       model_save_path, max_trials=max_trials)
@@ -78,69 +116,8 @@ def run_action():
     # Start the operation in a separate thread so the GUI stays responsive
     threading.Thread(target=run_in_thread).start()
 
-def switch_language(*args):
-    global lang_dict
-    lang = lang_var.get()
-    if lang == "English":
-        lang_dict = {
-            "select_mode": "Select Mode",
-            "train": "Train",
-            "evaluate": "Evaluate",
-            "tune": "Tune",
-            "common_params": "Common Parameters",
-            "csv_file_path": "CSV File Path:",
-            "browse": "Browse",
-            "model_save_path": "Model Save Path:",
-            "extra_params": "Extra Parameters",
-            "n_lags": "n_lags:",
-            "target_col": "Target Column:",
-            "epochs": "Epochs:",
-            "batch_size": "Batch Size:",
-            "validation_split": "Validation Split:",
-            "interval": "Interval (hours):",
-            "max_trials": "Max Trials (Tune):",
-            "run": "Run",
-            "status_idle": "Status: Idle",
-            "status_running": "Status: Running...",
-            "status_completed": "Status: Completed",
-            "status_error": "Status: Error",
-            "input_error": "Input Error",
-            "check_numeric": "Please check that numeric values are entered correctly.",
-            "select_csv": "Select CSV File"
-        }
-    else:
-        lang_dict = {
-            "select_mode": "モード選択",
-            "train": "訓練",
-            "evaluate": "評価",
-            "tune": "調整",
-            "common_params": "共通パラメータ",
-            "csv_file_path": "CSVファイルパス:",
-            "browse": "参照",
-            "model_save_path": "モデル保存パス:",
-            "extra_params": "追加パラメータ",
-            "n_lags": "n_lags:",
-            "target_col": "ターゲット列:",
-            "epochs": "エポック数:",
-            "batch_size": "バッチサイズ:",
-            "validation_split": "検証分割:",
-            "interval": "間隔（時間）:",
-            "max_trials": "最大試行回数（調整）:",
-            "run": "実行",
-            "status_idle": "ステータス: 待機中",
-            "status_running": "ステータス: 実行中...",
-            "status_completed": "ステータス: 完了",
-            "status_error": "ステータス: エラー",
-            "input_error": "入力エラー",
-            "check_numeric": "数値が正しく入力されているか確認してください。",
-            "select_csv": "CSVファイルを選択"
-        }
-    update_labels()
-
 def update_labels():
     frame_mode.config(text=lang_dict["select_mode"])
-    for i, mode in enumerate([lang_dict["train"], lang_dict["evaluate"], lang_dict["tune"]]):
-        mode_buttons[i].config(text=mode)
     common_frame.config(text=lang_dict["common_params"])
     file_label.config(text=lang_dict["csv_file_path"])
     browse_button.config(text=lang_dict["browse"])
@@ -160,30 +137,30 @@ def update_labels():
 root = tk.Tk()
 root.title("Oil Temperature Prediction")
 
-# Language selection
-lang_var = tk.StringVar(value="English")
-lang_var.trace_add("write", switch_language)
-
-lang_frame = ttk.LabelFrame(root, text="Language")
-lang_frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
-for i, lang in enumerate(["English", "日本語"]):
-    ttk.Radiobutton(lang_frame, text=lang, variable=lang_var, value=lang).grid(row=0, column=i, padx=5, pady=5)
+# Configure column weights to ensure proper expansion
+root.columnconfigure(0, weight=1)
 
 # Mode selection
-mode_var = tk.StringVar(value="Train")
+mode_var = tk.StringVar(value="Train")  # Default value in English
 mode_var.trace_add("write", update_mode)  # Call update_mode whenever mode changes
 
 frame_mode = ttk.LabelFrame(root, text="Select Mode")
 frame_mode.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+frame_mode.columnconfigure(0, weight=1)
+frame_mode.columnconfigure(1, weight=1)
+frame_mode.columnconfigure(2, weight=1)
+
+# Create mode buttons
 mode_buttons = []
-for i, mode in enumerate(["Train", "Evaluate", "Tune"]):
+for i, mode in enumerate(["Train", "Evaluate", "Tune"]):  # Default English values
     btn = ttk.Radiobutton(frame_mode, text=mode, variable=mode_var, value=mode)
-    btn.grid(row=0, column=i, padx=5, pady=5)
+    btn.grid(row=0, column=i, padx=5, pady=5, sticky="ew")
     mode_buttons.append(btn)
 
 # Common parameters frame (always visible)
 common_frame = ttk.LabelFrame(root, text="Common Parameters")
 common_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+common_frame.columnconfigure(1, weight=1)  # Make entry columns expandable
 
 def add_label_entry(parent, label_text, row, default=""):
     label = ttk.Label(parent, text=label_text)
@@ -201,6 +178,7 @@ model_save_label, model_save_entry = add_label_entry(common_frame, "Model Save P
 # Extra parameters frame (visible for Train/Tune modes only)
 extra_frame = ttk.LabelFrame(root, text="Extra Parameters")
 extra_frame.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
+extra_frame.columnconfigure(1, weight=1)  # Make entry columns expandable
 
 n_lags_label, n_lags_entry = add_label_entry(extra_frame, "n_lags:", 0, "5")
 target_col_label, target_col_entry = add_label_entry(extra_frame, "Target Column:", 1, "OT")
@@ -218,8 +196,14 @@ run_button.grid(row=4, column=0, padx=10, pady=10)
 status_label = ttk.Label(root, text="Status: Idle")
 status_label.grid(row=5, column=0, padx=10, pady=5)
 
-# Initially update the mode (so that if Evaluate is the default, extra parameters are hidden)
+# Initialize default mode
 update_mode()
-switch_language()
+
+# Set initial language (English by default)
+update_labels()
+
+# Allow the window to resize itself to fit contents
+root.update_idletasks()
+root.geometry("")
 
 root.mainloop()
