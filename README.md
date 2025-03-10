@@ -29,6 +29,8 @@ The GUI is organized into several sections:
 
 *   **Train:**  Trains a new LSTM model using the provided data and parameters.
 *   **Evaluate:** Evaluates a pre-trained LSTM model (specified by "Model Save Path") on the provided data.
+    *   **A graph plotting the predicted Oil Temperature (OT) values against the actual Oil Temperature values from your data.** This visualization helps you assess how well the model's predictions align with the real data.
+    *   **The Test Loss (MSE - Mean Squared Error) value.** This numerical metric quantifies the model's prediction error on the test dataset.
 *   **Tune:**  Performs hyperparameter tuning for an LSTM model using Keras Tuner to find the best model configuration based on validation loss.
 
 Select the desired mode using the radio buttons in the "Select Mode" frame. The "Extra Parameters" frame will be shown or hidden depending on whether "Train" or "Tune" mode is selected (it is hidden for "Evaluate" mode).
