@@ -4,39 +4,39 @@ import threading
 from src import train_model  
 import tkinter.font as tkFont
 
-# Initial language dictionary (English only)
+# Initial language dictionary (English and Japanese)
 lang_dict = {
-    "select_mode": "Select Mode",
-    "train": "Train",
-    "evaluate": "Evaluate",
-    "tune": "Tune",
-    "common_params": "Common Parameters",
-    "csv_file_path": "CSV File Path:",
-    "browse": "Browse",
-    "model_save_path": "Model Save Path:",
-    "extra_params": "Extra Parameters",
-    "n_lags": "n_lags:",
-    "target_col": "Target Column:",
-    "epochs": "Epochs:",
-    "batch_size": "Batch Size:",
-    "validation_split": "Validation Split:",
-    "interval": "Interval (hours):",
-    "max_trials": "Max Trials (Tune):",
-    "run": "Run",
-    "status_idle": "Status: Idle",
-    "status_running": "Status: Running...",
-    "status_completed": "Status: Completed",
-    "status_error": "Status: Error",
-    "input_error": "Input Error",
-    "check_numeric": "Please check that numeric values are entered correctly.",
-    "select_csv": "Select CSV File"
+    "select_mode": "Select Mode / モード選択",
+    "train": "Train / 訓練",
+    "evaluate": "Evaluate / 評価",
+    "tune": "Tune / 調整",
+    "common_params": "Common Parameters / 共通パラメータ",
+    "csv_file_path": "CSV File Path: / CSVファイルパス:",
+    "browse": "Browse / ブラウズ",
+    "model_save_path": "Model Save Path: / モデル保存パス:",
+    "extra_params": "Extra Parameters / 追加パラメータ",
+    "n_lags": "n_lags: / 遅れ数:",
+    "target_col": "Target Column: / 目標列:",
+    "epochs": "Epochs: / エポック数:",
+    "batch_size": "Batch Size: / バッチサイズ:",
+    "validation_split": "Validation Split: / 検証分割:",
+    "interval": "Interval (hours): / 間隔（時間）:",
+    "max_trials": "Max Trials (Tune): / 最大試行数（調整）:",
+    "run": "Run / 実行",
+    "status_idle": "Status: Idle / 状態: 待機中",
+    "status_running": "Status: Running... / 状態: 実行中...",
+    "status_completed": "Status: Completed / 状態: 完了",
+    "status_error": "Status: Error / 状態: エラー",
+    "input_error": "Input Error / 入力エラー",
+    "check_numeric": "Please check that numeric values are entered correctly. / 数値が正しく入力されているか確認してください。",
+    "select_csv": "Select CSV File / CSVファイルを選択"
 }
 
 # Mode map for conversion between languages
 mode_map = {
-    "Train": "Train",
-    "Evaluate": "Evaluate",
-    "Tune": "Tune"
+    "Train": "Train / 訓練",
+    "Evaluate": "Evaluate / 評価",
+    "Tune": "Tune / 調整"
 }
 
 # Store internal mode (language-independent)
@@ -144,7 +144,7 @@ root.columnconfigure(0, weight=1)
 mode_var = tk.StringVar(value="Train")  # Default value in English
 mode_var.trace_add("write", update_mode)  # Call update_mode whenever mode changes
 
-frame_mode = ttk.LabelFrame(root, text="Select Mode")
+frame_mode = ttk.LabelFrame(root, text="Select Mode / モード選択")
 frame_mode.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 frame_mode.columnconfigure(0, weight=1)
 frame_mode.columnconfigure(1, weight=1)
@@ -152,13 +152,13 @@ frame_mode.columnconfigure(2, weight=1)
 
 # Create mode buttons
 mode_buttons = []
-for i, mode in enumerate(["Train", "Evaluate", "Tune"]):  # Default English values
+for i, mode in enumerate(["Train / 訓練", "Evaluate / 評価", "Tune / 調整"]):  # Default English values
     btn = ttk.Radiobutton(frame_mode, text=mode, variable=mode_var, value=mode)
     btn.grid(row=0, column=i, padx=5, pady=5, sticky="ew")
     mode_buttons.append(btn)
 
 # Common parameters frame (always visible)
-common_frame = ttk.LabelFrame(root, text="Common Parameters")
+common_frame = ttk.LabelFrame(root, text="Common Parameters / 共通パラメータ")
 common_frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 common_frame.columnconfigure(1, weight=1)  # Make entry columns expandable
 
@@ -170,30 +170,30 @@ def add_label_entry(parent, label_text, row, default=""):
     entry.grid(row=row, column=1, padx=5, pady=5, sticky="ew")
     return label, entry
 
-file_label, file_entry = add_label_entry(common_frame, "CSV File Path:", 0, "data/ett.csv")
-browse_button = ttk.Button(common_frame, text="Browse", command=select_file)
+file_label, file_entry = add_label_entry(common_frame, "CSV File Path: / CSVファイルパス:", 0, "data/ett.csv")
+browse_button = ttk.Button(common_frame, text="Browse / ブラウズ", command=select_file)
 browse_button.grid(row=0, column=2, padx=5, pady=5)
-model_save_label, model_save_entry = add_label_entry(common_frame, "Model Save Path:", 1, "models/ot_model_7d_ft_50.keras")
+model_save_label, model_save_entry = add_label_entry(common_frame, "Model Save Path: / モデル保存パス:", 1, "models/ot_model_7d_ft_50.keras")
 
 # Extra parameters frame (visible for Train/Tune modes only)
-extra_frame = ttk.LabelFrame(root, text="Extra Parameters")
+extra_frame = ttk.LabelFrame(root, text="Extra Parameters / 追加パラメータ")
 extra_frame.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
 extra_frame.columnconfigure(1, weight=1)  # Make entry columns expandable
 
-n_lags_label, n_lags_entry = add_label_entry(extra_frame, "n_lags:", 0, "5")
-target_col_label, target_col_entry = add_label_entry(extra_frame, "Target Column:", 1, "OT")
-epochs_label, epochs_entry = add_label_entry(extra_frame, "Epochs:", 2, "20")
-batch_size_label, batch_size_entry = add_label_entry(extra_frame, "Batch Size:", 3, "32")
-validation_split_label, validation_split_entry = add_label_entry(extra_frame, "Validation Split:", 4, "0.1")
-interval_label, interval_entry = add_label_entry(extra_frame, "Interval (hours):", 5, "24")
-max_trials_label, max_trials_entry = add_label_entry(extra_frame, "Max Trials (Tune):", 6, "50")
+n_lags_label, n_lags_entry = add_label_entry(extra_frame, "n_lags: / 遅れ数:", 0, "5")
+target_col_label, target_col_entry = add_label_entry(extra_frame, "Target Column: / 目標列:", 1, "OT")
+epochs_label, epochs_entry = add_label_entry(extra_frame, "Epochs: / エポック数:", 2, "20")
+batch_size_label, batch_size_entry = add_label_entry(extra_frame, "Batch Size: / バッチサイズ:", 3, "32")
+validation_split_label, validation_split_entry = add_label_entry(extra_frame, "Validation Split: / 検証分割:", 4, "0.1")
+interval_label, interval_entry = add_label_entry(extra_frame, "Interval (hours): / 間隔（時間）:", 5, "24")
+max_trials_label, max_trials_entry = add_label_entry(extra_frame, "Max Trials (Tune): / 最大試行数（調整）:", 6, "50")
 
 # Run button
-run_button = ttk.Button(root, text="Run", command=run_action)
+run_button = ttk.Button(root, text="Run / 実行", command=run_action)
 run_button.grid(row=4, column=0, padx=10, pady=10)
 
 # Status label near the run button
-status_label = ttk.Label(root, text="Status: Idle")
+status_label = ttk.Label(root, text="Status: Idle / 状態: 待機中")
 status_label.grid(row=5, column=0, padx=10, pady=5)
 
 # Initialize default mode
