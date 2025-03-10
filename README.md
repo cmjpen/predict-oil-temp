@@ -1,5 +1,7 @@
 # Oil Temperature Prediction using LSTMs
 
+## Project Structure
+
 *   **`data/`**:  Contains the CSV data file used for training and evaluation. The default file is `ett.csv`.
 *   **`models/`**:  Stores pre-trained models. You can save trained models here and load them for evaluation.
 *   **`src/`**:  Contains the source code for model training (`train_model.py`) and data preprocessing (`data_preprocessing.py`).
