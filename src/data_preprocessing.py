@@ -33,7 +33,7 @@ def load_and_preprocess_data(file_path, n_lags, target_col, interval=1):
     df[['season_autumn', 'season_spring', 'season_summer', 'season_winter']] = \
         df[['season_autumn', 'season_spring', 'season_summer', 'season_winter']].astype('float32')
 
-    # スケーリングとラグ特徴の作成前にデータをトレーニングとテストに分割する
+    # データをトレーニングとテストに分割する
     X = df # 特徴量は最初はすべての列を含む
     y = df[target_col] # 目標は以前と同じように定義される
     train_size = int(0.8 * len(X))
@@ -67,7 +67,7 @@ def load_and_preprocess_data(file_path, n_lags, target_col, interval=1):
 
     # ラグ特徴と分割後のシーケンス作成
     def create_sequences(data_X, data_y, target_col, n_lags, k=interval): # Xとyを取るように修正
-        X, y = []
+        X, y = [], []
         # ラグとNaNの削除後のインデックスのずれを考慮して範囲を調整する
         # NaN削除後の特徴量と目標のインデックスの*交差*に基づいて反復する
         common_indices = data_X.index.intersection(data_y.index)
