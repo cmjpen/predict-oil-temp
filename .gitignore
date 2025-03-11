@@ -3,6 +3,7 @@
 /src/hyperparam_tuning
 /test
 *.png
+/notebooks/eda.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
