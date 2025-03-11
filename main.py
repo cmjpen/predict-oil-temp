@@ -93,25 +93,25 @@ def run_action():
     root.after(0, lambda: status_label.config(text=lang_dict["status_running"]))
 
     def run_in_thread():
-        # try:
-        if current_internal_mode == "train":
-            train_model.train_lstm(file_path, n_lags, target_col,
-                                   epochs, batch_size,
-                                   model_save_path, lstm_layers)
-        elif current_internal_mode == "evaluate":
-            train_model.evaluate_lstm(file_path, n_lags, target_col,
-                                      model_save_path, interval)
-        elif current_internal_mode == "tune":
-            train_model.tune_lstm(file_path, n_lags, target_col,
-                                   epochs, batch_size,
-                                   model_save_path, max_trials=max_trials, lstm_layers=lstm_layers)
-        # 成功時にステータスラベルを更新（スレッドセーフな呼び出しを使用）
-        root.after(0, lambda: status_label.config(text=lang_dict["status_completed"]))
-        # except Exception as e:
-        #     # エラー時にステータスラベルをエラーメッセージで更新
-        #     root.after(0, lambda e=e: status_label.config(text=f"{lang_dict['status_error']}: {str(e)}"))
-        # finally:
-            # 必要に応じて、数秒後にステータスをクリア
+        try:
+            if current_internal_mode == "train":
+                train_model.train_lstm(file_path, n_lags, target_col,
+                                    epochs, batch_size,
+                                    model_save_path, lstm_layers)
+            elif current_internal_mode == "evaluate":
+                train_model.evaluate_lstm(file_path, n_lags, target_col,
+                                        model_save_path, interval)
+            elif current_internal_mode == "tune":
+                train_model.tune_lstm(file_path, n_lags, target_col,
+                                    epochs, batch_size,
+                                    model_save_path, max_trials=max_trials, lstm_layers=lstm_layers)
+            # 成功時にステータスラベルを更新（スレッドセーフな呼び出しを使用）
+            root.after(0, lambda: status_label.config(text=lang_dict["status_completed"]))
+        except Exception as e:
+            # エラー時にステータスラベルをエラーメッセージで更新
+            root.after(0, lambda e=e: status_label.config(text=f"{lang_dict['status_error']}: {str(e)}"))
+        finally:
+            必要に応じて、数秒後にステータスをクリア
         root.after(5000, lambda: status_label.config(text=lang_dict["status_idle"]))
 
     # 操作を別スレッドで開始してGUIを応答可能に保つ
