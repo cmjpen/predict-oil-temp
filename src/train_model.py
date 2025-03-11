@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
-from . import data_preprocessing
+# from . import 
+import data_preprocessing
 from matplotlib import font_manager as fm
 import keras_tuner as kt
 import shutil
@@ -82,6 +83,68 @@ def evaluate_lstm(file_path, n_lags, target_col, model_save_path, interval):
     plt.legend()
     plt.show()
 
+def compare_models(file_path, n_lags, target_col, model_save_paths, interval):
+    """
+    複数のモデルを比較し、テストデータに対する予測とMSEをプロットします。
+
+    Parameters:
+      - file_path: CSVデータのパス
+      - n_lags: ラグの数
+      - target_col: 予測対象の列名（例: 'OT'）
+      - model_save_paths: 比較する各モデルの保存パス（リスト）
+      - interval: 予測の時間間隔
+    """
+    # データの読み込みと前処理
+    X_train, X_test, y_train, y_test, scaler, df_scaled, df = data_preprocessing.load_and_preprocess_data(file_path, n_lags, target_col)
+    
+    # 各モデルの予測結果とMSEを格納するリスト
+    model_names = []
+    predictions = []
+    mse_values = []
+    
+    for path in model_save_paths:
+        # モデルの読み込み
+        model = load_model(path)
+        # テストセットで評価してMSEを取得
+        mse = model.evaluate(X_test, y_test, verbose=0)
+        mse_values.append(mse)
+        # 予測の実施
+        y_pred = model.predict(X_test)
+        predictions.append(y_pred)
+        # ファイル名（もしくはパスから抽出した識別子）をモデル名とする
+        model_names.append(path.split('/')[-1])
+    
+    # 日本語フォントの設定
+    jp_font = fm.FontProperties(fname='fonts/NotoSansCJKjp-Regular.ttf')
+    plt.rcParams['font.family'] = jp_font.get_name()
+    
+    # 実際の値と各モデルの予測値を1つのグラフにプロットする
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    ax.plot(y_test, label='実際 (Actual)', color='black', linewidth=2)
+    colors = ['red', 'blue', 'green', 'orange', 'purple']  # 必要に応じて拡張
+    for i, y_pred in enumerate(predictions):
+        label = f'{model_names[i]} (MSE: {mse_values[i]:.4f})'
+        ax.plot(y_pred, label=label, color=colors[i % len(colors)], linestyle='--')
+    
+    ax.set_xlabel('時間 (Time)', fontsize=12)
+    ax.set_ylabel('油温 (Oil Temperature)', fontsize=12)
+    ax.set_title('実際の油温と各モデルの予測比較', fontsize=14)
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
+    
+    # 各モデルのMSEを比較するバーチャートをプロット
+    fig2, ax2 = plt.subplots(figsize=(8, 6))
+    ax2.bar(model_names, mse_values, color=colors[:len(model_names)])
+    ax2.set_xticklabels(model_names, rotation=45, ha='right')
+    ax2.set_xlabel('モデル', fontsize=12)
+    ax2.set_ylabel('MSE', fontsize=12)
+    ax2.set_title('各モデルのMSE比較', fontsize=14)
+    plt.subplots_adjust(bottom=0.2)  # Adjust bottom margin to prevent overlap
+    plt.tight_layout()
+    plt.show()
+
 def tune_lstm(file_path, n_lags, target_col, epochs, batch_size, model_save_path, max_trials=5, lstm_layers=1):
     # "hyperparam_tuning" フォルダが存在する場合、削除
     if os.path.exists('hyperparam_tuning'):
@@ -133,3 +196,18 @@ def tune_lstm(file_path, n_lags, target_col, epochs, batch_size, model_save_path
     # 最適なモデルを保存
     best_model.save(model_save_path)
     print(f"Best model saved to {model_save_path}")
+
+folder = "C:\\Users\\wbscr\\OneDrive\\Code\\Oil Temperature Analysis\\restructured\\predict-oil-temp\\models"
+models = [
+    "ot_model_30d_ft_1.keras",
+    "ot_model_30d_ft_30.keras",
+    "ot_model_30d_ft_0_lyr_2.keras",
+    "ot_model_30d_ft_30_lyr_2.keras"
+]
+
+models = [os.path.join(folder, model) for model in models]
+# モデルファイルが存在するかチェック
+for model_path in models:
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+compare_models('data/ett.csv', 5, 'OT', models, 1)
