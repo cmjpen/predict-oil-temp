@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import LSTM, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
 from . import data_preprocessing
 from matplotlib import font_manager as fm
 import keras_tuner as kt
+import shutil
+import os
 
-def train_lstm(file_path, n_lags, target_col, epochs, batch_size, validation_split, model_save_path):
+def train_lstm(file_path, n_lags, target_col, epochs, batch_size, model_save_path, lstm_layers=1, learning_rate=0.0001):
     # データの読み込みと前処理
     X_train, X_test, y_train, y_test, scaler, df_scaled, df = data_preprocessing.load_and_preprocess_data(file_path, n_lags, target_col)
 
@@ -16,10 +19,18 @@ def train_lstm(file_path, n_lags, target_col, epochs, batch_size, validation_spl
 
     # モデルの構築
     model = Sequential()
-    model.add(LSTM(50, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=False))
-    model.add(Dropout(0.2))
+    if lstm_layers > 1:
+        model.add(LSTM(50, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=True))
+        model.add(Dropout(0.2))
+        for _ in range(lstm_layers - 1):
+            model.add(LSTM(50, activation='relu', return_sequences=False))
+            model.add(Dropout(0.2))
+    else:
+        model.add(LSTM(50, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=False))
+        model.add(Dropout(0.2))
     model.add(Dense(1))
-    model.compile(optimizer='adam', loss='mean_squared_error')
+    optimizer = Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, loss='mean_squared_error')
     model.summary()
 
     # トレーニング
@@ -28,7 +39,8 @@ def train_lstm(file_path, n_lags, target_col, epochs, batch_size, validation_spl
     history = model.fit(X_train, y_train,
                         epochs=epochs,
                         batch_size=batch_size,
-                        validation_split=validation_split,
+                        validation_data=(X_test, y_test),
+                        shuffle=False,
                         verbose=1)
 
     # テストセットでの評価
@@ -70,7 +82,10 @@ def evaluate_lstm(file_path, n_lags, target_col, model_save_path, interval):
     plt.legend()
     plt.show()
 
-def tune_lstm(file_path, n_lags, target_col, epochs, batch_size, validation_split, model_save_path, max_trials=5):
+def tune_lstm(file_path, n_lags, target_col, epochs, batch_size, model_save_path, max_trials=5, lstm_layers=1):
+    # "hyperparam_tuning" フォルダが存在する場合、削除
+    if os.path.exists('hyperparam_tuning'):
+        shutil.rmtree('hyperparam_tuning')
     # データの読み込みと前処理
     X_train, X_test, y_train, y_test, scaler, df_scaled, df = data_preprocessing.load_and_preprocess_data(file_path, n_lags, target_col)
     
@@ -79,10 +94,19 @@ def tune_lstm(file_path, n_lags, target_col, epochs, batch_size, validation_spli
         model = Sequential()
         # LSTM層のユニット数を調整
         units = hp.Int('units', min_value=32, max_value=128, step=32)
-        model.add(LSTM(units, activation='relu', input_shape=(X_train.shape[1], X_train.shape[2]), return_sequences=False))
-        # ドロップアウト率を調整
-        dropout_rate = hp.Float('dropout_rate', min_value=0.0, max_value=0.5, step=0.1)
-        model.add(Dropout(dropout_rate))
+        for i in range(lstm_layers):
+            if i == 0:  # First LSTM layer
+                if lstm_layers > 1:
+                    model.add(LSTM(units, activation='relu', return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])))
+                else:
+                    model.add(LSTM(units, activation='relu', return_sequences=False, input_shape=(X_train.shape[1], X_train.shape[2])))
+            elif i == lstm_layers - 1:  # Last LSTM layer
+                model.add(LSTM(units // (2**i), activation='relu', return_sequences=False))
+            else:  # Intermediate LSTM layers
+                model.add(LSTM(units // (2**i), activation='relu', return_sequences=True))
+            
+            dropout_rate = hp.Float(f'dropout_{i}', min_value=0.0, max_value=0.5, step=0.1)
+            model.add(Dropout(dropout_rate))
         model.add(Dense(1))
         # Adamオプティマイザの学習率を調整
         learning_rate = hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='LOG')
@@ -99,7 +123,7 @@ def tune_lstm(file_path, n_lags, target_col, epochs, batch_size, validation_spli
     )
 
     # ハイパーパラメータ検索を実行
-    tuner.search(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_split=validation_split, verbose=1)
+    tuner.search(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_test, y_test), verbose=1)
     
     # 最適なモデルとハイパーパラメータを取得
     best_model = tuner.get_best_models(num_models=1)[0]

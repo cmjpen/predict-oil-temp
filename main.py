@@ -20,6 +20,7 @@ lang_dict = {
     "epochs": "Epochs: / エポック数:",
     "batch_size": "Batch Size: / バッチサイズ:",
     "validation_split": "Validation Split: / 検証分割:",
+    "lstm_layers": "Number of LSTM Layers: / LSTM層数:",
     "interval": "Interval (hours): / 間隔（時間）:",
     "max_trials": "Max Trials (Tune): / 最大試行数（調整）:",
     "run": "Run / 実行",
@@ -81,7 +82,7 @@ def run_action():
         target_col = target_col_entry.get()
         epochs = int(epochs_entry.get())
         batch_size = int(batch_size_entry.get())
-        validation_split = float(validation_split_entry.get())
+        lstm_layers = int(lstm_layers_entry.get())
         interval = int(interval_entry.get())
         max_trials = int(max_trials_entry.get())
     except ValueError:
@@ -92,26 +93,26 @@ def run_action():
     root.after(0, lambda: status_label.config(text=lang_dict["status_running"]))
 
     def run_in_thread():
-        try:
-            if current_internal_mode == "train":
-                train_model.train_lstm(file_path, n_lags, target_col,
-                                       epochs, batch_size, validation_split,
-                                       model_save_path)
-            elif current_internal_mode == "evaluate":
-                train_model.evaluate_lstm(file_path, n_lags, target_col,
-                                          model_save_path, interval)
-            elif current_internal_mode == "tune":
-                train_model.tune_lstm(file_path, n_lags, target_col,
-                                      epochs, batch_size, validation_split,
-                                      model_save_path, max_trials=max_trials)
-            # 成功時にステータスラベルを更新（スレッドセーフな呼び出しを使用）
-            root.after(0, lambda: status_label.config(text=lang_dict["status_completed"]))
-        except Exception as e:
-            # エラー時にステータスラベルをエラーメッセージで更新
-            root.after(0, lambda e=e: status_label.config(text=f"{lang_dict['status_error']}: {str(e)}"))
-        finally:
+        # try:
+        if current_internal_mode == "train":
+            train_model.train_lstm(file_path, n_lags, target_col,
+                                   epochs, batch_size,
+                                   model_save_path, lstm_layers)
+        elif current_internal_mode == "evaluate":
+            train_model.evaluate_lstm(file_path, n_lags, target_col,
+                                      model_save_path, interval)
+        elif current_internal_mode == "tune":
+            train_model.tune_lstm(file_path, n_lags, target_col,
+                                   epochs, batch_size,
+                                   model_save_path, max_trials=max_trials, lstm_layers=lstm_layers)
+        # 成功時にステータスラベルを更新（スレッドセーフな呼び出しを使用）
+        root.after(0, lambda: status_label.config(text=lang_dict["status_completed"]))
+        # except Exception as e:
+        #     # エラー時にステータスラベルをエラーメッセージで更新
+        #     root.after(0, lambda e=e: status_label.config(text=f"{lang_dict['status_error']}: {str(e)}"))
+        # finally:
             # 必要に応じて、数秒後にステータスをクリア
-            root.after(5000, lambda: status_label.config(text=lang_dict["status_idle"]))
+        root.after(5000, lambda: status_label.config(text=lang_dict["status_idle"]))
 
     # 操作を別スレッドで開始してGUIを応答可能に保つ
     threading.Thread(target=run_in_thread).start()
@@ -127,7 +128,7 @@ def update_labels():
     target_col_label.config(text=lang_dict["target_col"])
     epochs_label.config(text=lang_dict["epochs"])
     batch_size_label.config(text=lang_dict["batch_size"])
-    validation_split_label.config(text=lang_dict["validation_split"])
+    lstm_layers_label.config(text=lang_dict["lstm_layers"])
     interval_label.config(text=lang_dict["interval"])
     max_trials_label.config(text=lang_dict["max_trials"])
     run_button.config(text=lang_dict["run"])
@@ -184,7 +185,7 @@ n_lags_label, n_lags_entry = add_label_entry(extra_frame, "n_lags: / 遅れ数:"
 target_col_label, target_col_entry = add_label_entry(extra_frame, "Target Column: / 目標列:", 1, "OT")
 epochs_label, epochs_entry = add_label_entry(extra_frame, "Epochs: / エポック数:", 2, "20")
 batch_size_label, batch_size_entry = add_label_entry(extra_frame, "Batch Size: / バッチサイズ:", 3, "32")
-validation_split_label, validation_split_entry = add_label_entry(extra_frame, "Validation Split: / 検証分割:", 4, "0.1")
+lstm_layers_label, lstm_layers_entry = add_label_entry(extra_frame, lang_dict["lstm_layers"], 4, "1")
 interval_label, interval_entry = add_label_entry(extra_frame, "Interval (hours): / 間隔（時間）:", 5, "24")
 max_trials_label, max_trials_entry = add_label_entry(extra_frame, "Max Trials (Tune): / 最大試行数（調整）:", 6, "50")
 
